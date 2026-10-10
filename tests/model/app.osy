@@ -1,0 +1,106 @@
+// A café with a menu in English and Swedish: members who sign in, staff who look after its words, and a menu whose
+// dishes are [Translatable] data.
+
+using Osysharp.Localization;
+
+[Role] public enum AppRole { Authenticator, Member, Staff }
+
+[Principal]
+public entity Member {
+  [Required, Unique, MaxLength(255)] string Email;
+  [MaxLength(200)] string PasswordHash;
+  security {
+    allow read when IsAuthenticated where Id == user.Id;
+    allow read when IsStaff;
+    allow read, create when IsAuthenticator;
+    deny read PasswordHash when !IsAuthenticator;
+  }
+}
+
+[RoleGrant] public entity RoleGrant {
+  [Required] Member Member;
+  [Required] AppRole Role;
+  security { allow read when IsStaff; allow create when IsAuthenticator; }
+}
+
+policy IsStaff => RoleGrant.Any(g => g.Member == user && g.Role == AppRole.Staff);
+policy IsAuthenticator => RoleGrant.Any(g => g.Member == user && g.Role == AppRole.Authenticator);
+
+[AuthMethod]
+public string SignIn(string email, string password) {
+  var m = Member.Where(x => x.Email == email).FirstOrDefault();
+  if (m == null) { Security.VerifyPassword(password); return ""; }
+  return Security.VerifyPassword(password, m.PasswordHash) ? Security.IssueJwt(m.Id, m.Email) : "";
+}
+
+app.Auth = new PasswordAuth { LoginField = Email, PasswordField = PasswordHash };
+app.AuthBootstrap = new AuthBootstrap { Role = AppRole.Authenticator, Login = SignIn };
+
+// The words are staff's to change — the one question Osysharp.Localization asks the app.
+policy EditsTranslations => IsStaff;
+
+/// A dish on the menu. Its name and description are the café's own words, so they are translated.
+public entity Dish {
+  [Required, MaxLength(80), Translatable] string Name;
+  [MaxLength(300), Translatable] string? Description;
+  [Required, Unique, MaxLength(40)] string Code;
+  decimal Price;
+  security {
+    allow read when IsAnonymous || IsAuthenticated;
+    allow create, update when IsStaff;
+  }
+}
+
+/// The receipt mail's paragraphs, which staff write once per language — a Swedish guest is mailed the Swedish ones.
+public entity ReceiptWords {
+  [Required, MaxLength(80)] string Part;
+  [Required, MaxLength(35)] string Language;
+  [Required] string Words;
+  security { allow read, create, update, delete when IsStaff; }
+}
+
+/// The receipt's paragraphs on the Translations desk: each with the languages staff have written it in.
+public class ReceiptWordsOnTheDesk : IWrittenWords {
+  public List<WrittenWords> Written() {
+    var found = new List<WrittenWords>();
+    foreach (var w in ReceiptWords.OrderBy(w => w.Part).ToList()) {
+      var where = $"Mail · Receipt · {w.Part}";
+      var item = found.FirstOrDefault(f => f.Where == where);
+      if (item == null) {
+        item = new WrittenWords { Where = where, WriteAt = "/desk" };
+        found.Add(item);
+      }
+      item.Languages.Add(w.Language);
+    }
+    return found;
+  }
+}
+
+app.Translations = new TranslationsSetup { Written = [ new ReceiptWordsOnTheDesk() ] };
+
+[Route("/")]
+[AllowAnonymous]
+component Menu() {
+  live var dishes = Dish.OrderBy(d => d.Name).ToList();
+  render {
+    Stack(gap: 3, p: 6) {
+      Text("Today's menu", fontSize: FontSize.Title, fontWeight: FontWeight.Bold);
+      Row(gap: 2) {
+        foreach (var lang in App.Languages.Where(l => l != Session.Language)) {
+          Button(lang.ToUpper(), onPress: () => Session.SetLanguage(lang), size: Size.Sm, tone: Tone.Ghost);
+        }
+      }
+      foreach (var d in dishes) {
+        Stack(gap: 0, label: d.Code) {
+          Text(d.Name, fontWeight: FontWeight.Semibold);
+          Text(d.Description ?? "", color: Colors.TextMuted);
+        }
+      }
+      Button("Order at the counter", onPress: () => {}, tone: Tone.Primary);
+    }
+  }
+}
+
+[Route("/desk")]
+[Authorize(IsStaff)]
+component Desk() { render { Box(p: 6) { TranslationsDesk(); } } }

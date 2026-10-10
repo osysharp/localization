@@ -1,0 +1,192 @@
+// The translator's desk — one component an app puts on a staff page:
+//
+//     [Route("/staff/translations")] [Authorize(IsStaff)] component StaffTranslations() { render { TranslationsDesk(); } }
+//
+// A language to work in, the app's WORDS or its DATA, and by default only what needs doing: not translated yet, or out
+// of date because the source changed. Each item shows where it is and what surrounds it — a word is impossible to
+// translate well without knowing whether it is a button, a heading or a line in a mail.
+
+namespace Osysharp.Localization;
+
+public component TranslationsDesk() {
+  string language = "";
+  // "words" · "data" · "written" (what staff write in each language elsewhere in the app — a mail's paragraph).
+  string showing = "words";
+  bool everything = false;
+  // The Data tab reads a page at a time — its rows can be a whole catalogue.
+  int page = 0;
+  int pages = 0;
+  List<TextRow> texts = [];
+  List<DataRow> values = [];
+  List<WrittenRow> written = [];
+  // Whether the app lists any place staff write words per language — the third tab is offered only then.
+  bool hasWritten = false;
+  string editing = "";
+  string draft = "";
+  string problem = "";
+  string note = "";
+
+  on mount {
+    language = App.Languages.Where(l => l != App.Languages[0]).FirstOrDefault() ?? "";
+    hasWritten = TranslationsWrittenAnywhere();
+    Load();
+  }
+  action Load() {
+    if (language == "") { return; }
+    if (showing == "data") {
+      pages = TranslationDataPages(language, everything);
+      if (page >= pages) { page = pages > 0 ? pages - 1 : 0; }
+      values = TranslationData(language, everything, page);
+    }
+    else if (showing == "written") { written = TranslationWritten(everything); }
+    else { texts = TranslationTexts(language, everything); }
+  }
+  action Pick(string l) { language = l; editing = ""; note = ""; page = 0; Load(); }
+  // A tab shows its own work: what was saved on another one is not news here.
+  action Words() { showing = "words"; editing = ""; note = ""; Load(); }
+  action Data() { showing = "data"; editing = ""; note = ""; page = 0; Load(); }
+  action Page(int to) { page = to; editing = ""; Load(); }
+  action Written() { showing = "written"; editing = ""; note = ""; Load(); }
+  action Everything(bool all) { everything = all; editing = ""; page = 0; Load(); }
+  action Edit(string key, string current) { editing = key; draft = current; problem = ""; }
+  action SaveText(TextRow t) {
+    try {
+      OverrideText(t.Id, language, draft);
+      editing = "";
+      note = "Saved — readers see it now.";
+      Load();
+    } catch (ValidationException e) {
+      problem = e.Message;
+    }
+  }
+  action Reset(TextRow t) {
+    ClearOverride(t.Id, language);
+    note = t.Orphan ? "Cleared." : "Back to the words in the app's locale file.";
+    Load();
+  }
+  action SaveValue(DataRow d) {
+    TranslateData(d.Entity, d.Row, d.Field, language, draft);
+    editing = "";
+    note = "Saved.";
+    Load();
+  }
+
+  render {
+    Stack(gap: 5, w: "100%") {
+      if (language == "") {
+        EmptyState("This app speaks one language", "Add a locale file (osy translate --to sv) to give it another.");
+      } else {
+        Row(gap: 3, align: Align.Center, wrap: Wrapping.Wrap) {
+          Text("Language", fontWeight: FontWeight.Semibold);
+          foreach (var l in App.Languages.Where(x => x != App.Languages[0])) {
+            Button(l.ToUpper(), onPress: () => Pick(l), size: Size.Sm, tone: l == language ? Tone.Primary : Tone.Ghost);
+          }
+        }
+        Tabs {
+          Tab("Words", selected: showing == "words", onPress: Words);
+          Tab("Data", selected: showing == "data", onPress: Data);
+          if (hasWritten) {
+            Tab("Written by staff", selected: showing == "written", onPress: Written);
+          }
+        }
+        Row(gap: 3, align: Align.Center, wrap: Wrapping.Wrap) {
+          Switch("Show everything, not only what needs doing", value: everything, onToggle: Everything);
+        }
+        if (note != "") { Text(note, role: UiRole.Status); }
+        if (showing == "written") {
+          Text("Words staff write once per language — a reader in a language they are missing from gets the template's own words.",
+               color: Colors.TextMuted);
+          if (written.Count == 0) { Text("Everything staff wrote is written in every language.", color: Colors.TextMuted); }
+          Stack(gap: 0, label: "Written by staff") {
+            foreach (var w in written) {
+              Row(justify: Justify.Between, align: Align.Start, gap: 3, py: 3, borderTW: 1, border: Colors.Border, wrap: Wrapping.Wrap, label: w.Where) {
+                Stack(gap: 1, minW: "0") {
+                  Text(w.Where, fontWeight: FontWeight.Semibold);
+                  Text(w.MissingIn == "" ? $"Written in {w.WrittenIn}" : $"Written in {w.WrittenIn} — not in {w.MissingIn}",
+                       fontSize: FontSize.Label, color: Colors.TextMuted);
+                }
+                Row(gap: 2, align: Align.Center) {
+                  Badge(w.State.Label, tone: w.State == TranslationState.Missing ? Tone.Warning : Tone.Default);
+                  if (w.WriteAt != null) { Link(href: w.WriteAt, label: $"Write it: {w.Where}") { Text("Write it", fontSize: FontSize.Label); } }
+                }
+              }
+            }
+          }
+        } else if (showing == "words") {
+          if (texts.Count == 0) { Text("Every word is translated.", color: Colors.TextMuted); }
+          Stack(gap: 0, label: "Words") {
+            foreach (var t in texts) {
+              Stack(gap: 2, py: 3, borderTW: 1, border: Colors.Border, label: t.Source) {
+                Row(justify: Justify.Between, align: Align.Start, gap: 3, wrap: Wrapping.Wrap) {
+                  Stack(gap: 1, minW: "0") {
+                    Text(t.Source, fontWeight: FontWeight.Semibold);
+                    Text(t.Where, fontSize: FontSize.Label, color: Colors.TextMuted);
+                    if (t.Neighbours != "") { Text($"Beside: {t.Neighbours}", fontSize: FontSize.Label, color: Colors.TextMuted); }
+                  }
+                  Badge(t.State.Label, tone: t.State == TranslationState.Missing || t.State == TranslationState.Stale ? Tone.Warning : Tone.Default);
+                }
+                if (editing == t.Id) {
+                  Field(language.ToUpper(), value: draft, error: problem,
+                        hint: t.Holes == "" ? (t.MaxLength > 0 ? $"At most about {t.MaxLength} characters." : "")
+                                            : $"Keep {t.Holes} — the page fills them in.");
+                  Row(gap: 2) {
+                    Button("Save", onPress: () => SaveText(t), size: Size.Sm, tone: Tone.Primary);
+                    Button("Cancel", onPress: () => { editing = ""; }, size: Size.Sm, tone: Tone.Ghost);
+                  }
+                } else {
+                  Row(gap: 3, align: Align.Center, wrap: Wrapping.Wrap) {
+                    Text(t.Current, color: t.State == TranslationState.Missing ? Colors.TextMuted : Colors.OnBg);
+                    if (t.Plural) {
+                      Text("(a count — translated in the locale file)", fontSize: FontSize.Label, color: Colors.TextMuted);
+                    } else if (!t.Orphan) {
+                      Button("Change", onPress: () => Edit(t.Id, t.Current), size: Size.Sm, tone: Tone.Ghost);
+                    }
+                    if (t.State == TranslationState.Overridden || t.Orphan) {
+                      Button(t.Orphan ? "Clear" : "Use the locale file's", onPress: () => Reset(t), size: Size.Sm, tone: Tone.Ghost);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          if (pages > 1) {
+            Row(gap: 3, align: Align.Center, wrap: Wrapping.Wrap, label: "Pages") {
+              Button("Previous", onPress: () => Page(page - 1), size: Size.Sm, tone: Tone.Ghost, disabled: page == 0);
+              Text($"Page {page + 1} of {pages}", fontSize: FontSize.Label, color: Colors.TextMuted);
+              Button("Next", onPress: () => Page(page + 1), size: Size.Sm, tone: Tone.Ghost, disabled: page + 1 >= pages);
+            }
+          }
+          if (values.Count == 0) {
+            Text(pages > 1 ? "Everything on this page is translated." : "All the data is translated.", color: Colors.TextMuted);
+          }
+          Stack(gap: 0, label: "Data") {
+            foreach (var d in values) {
+              Stack(gap: 2, py: 3, borderTW: 1, border: Colors.Border, label: d.Where) {
+                Row(justify: Justify.Between, align: Align.Start, gap: 3, wrap: Wrapping.Wrap) {
+                  Stack(gap: 1, minW: "0") {
+                    Text(d.Source, fontWeight: FontWeight.Semibold);
+                    Text(d.Where, fontSize: FontSize.Label, color: Colors.TextMuted);
+                  }
+                  Badge(d.State.Label, tone: d.State == TranslationState.Done ? Tone.Default : Tone.Warning);
+                }
+                if (editing == $"{d.Row}/{d.Field}") {
+                  TextAreaField(language.ToUpper(), value: draft, rows: 2);
+                  Row(gap: 2) {
+                    Button("Save", onPress: () => SaveValue(d), size: Size.Sm, tone: Tone.Primary);
+                    Button("Cancel", onPress: () => { editing = ""; }, size: Size.Sm, tone: Tone.Ghost);
+                  }
+                } else {
+                  Row(gap: 3, align: Align.Center, wrap: Wrapping.Wrap) {
+                    Text(d.Text == "" ? "—" : d.Text, color: d.Text == "" ? Colors.TextMuted : Colors.OnBg);
+                    Button("Translate", onPress: () => Edit($"{d.Row}/{d.Field}", d.Text == "" ? d.Source : d.Text), size: Size.Sm, tone: Tone.Ghost);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+// The producer's test project for Osysharp.Localization — a small café app in English and Swedish, with staff who
+// look after its words at the desk.
+app TranslationsKitTests {
+  model "model/**/*.osy";
+  tests "**/*.test.osy";
+  use Osysharp.Localization@0;
+  use Osysharp.Ui;
+}

@@ -1,0 +1,146 @@
+// sv (Svenska): the words of Osysharp.Localization, translated.
+// Written and kept in step with the source by `osy translate`: a new text arrives as `=> null`, a text
+// whose source changed keeps its old translation in a `was` clause. The words are yours to edit.
+// Source language: en.
+
+translations sv {
+  // ── Osysharp.Localization.TranslationState ──
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~18 characters
+  /// shown through Osysharp.Localization.TranslationState.Overridden
+  /// beside: "Not translated", "Out of date", "Translated"
+  label "Changed here" => "Ändrad här";
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~20 characters
+  /// shown through Osysharp.Localization.TranslationState.Missing
+  /// beside: "Out of date", "Translated", "Changed here"
+  label "Not translated" => "Inte översatt";
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~17 characters
+  /// shown through Osysharp.Localization.TranslationState.Stale
+  /// beside: "Not translated", "Translated", "Changed here"
+  label "Out of date" => "Inaktuell";
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~16 characters
+  /// shown through Osysharp.Localization.TranslationState.Done
+  /// beside: "Not translated", "Out of date", "Changed here"
+  label "Translated" => "Översatt";
+
+  // ── SaveBar ──
+  /// SaveBar · a button's label · at most ~10 characters
+  /// shown through Button.label
+  /// beside: "Unsaved changes", "Discard"
+  /// also in TranslationsDesk
+  button "Save" => "Spara";
+
+  // ── TranslationTexts ──
+  /// TranslationTexts · a control's name for screen readers
+  /// shown through TextRow.Where
+  accessibleName "no longer in the app — its words changed" => "finns inte längre i appen, texten har ändrats";
+
+  // ── TranslationsDesk ──
+  /// TranslationsDesk · a control's name for screen readers
+  accessibleName "Data" => "Data";
+  /// TranslationsDesk · a control's name for screen readers
+  accessibleName "Pages" => "Sidor";
+  /// TranslationsDesk · a control's name for screen readers
+  accessibleName "Words" => "Texter";
+  /// TranslationsDesk · a control's name for screen readers
+  /// placeholders: {w.Where} = w.Where (string)
+  accessibleName "Write it: {w.Where}" => "Skriv den: {w.Where}";
+  /// TranslationsDesk · a control's name for screen readers
+  /// beside: "Words staff write once per language — a reader in a language they are missing from gets the template's own words."
+  accessibleName "Written by staff" => "Skrivet av personalen";
+  /// TranslationsDesk · a button's label · at most ~12 characters
+  /// shown through Button.label
+  /// beside: "Save"
+  button "Cancel" => "Avbryt";
+  /// TranslationsDesk · a button's label · at most ~12 characters
+  /// shown through Button.label
+  button "Change" => "Ändra";
+  /// TranslationsDesk · a button's label · at most ~11 characters
+  /// shown through Button.label
+  button "Clear" => "Rensa";
+  /// TranslationsDesk · a button's label · at most ~10 characters
+  /// shown through Tab.label
+  /// beside: "Words"
+  button "Data" => "Data";
+  /// TranslationsDesk · a button's label · at most ~10 characters
+  /// shown through Button.label
+  /// beside: "Previous"
+  button "Next" => "Nästa";
+  /// TranslationsDesk · a button's label · at most ~14 characters
+  /// shown through Button.label
+  /// beside: "Next"
+  button "Previous" => "Föregående";
+  /// TranslationsDesk · a button's label · at most ~15 characters
+  /// shown through Button.label
+  button "Translate" => "Översätt";
+  /// TranslationsDesk · a button's label · at most ~30 characters
+  /// shown through Button.label
+  button "Use the locale file's" => "Använd språkfilens";
+  /// TranslationsDesk · a button's label · at most ~11 characters
+  /// shown through Tab.label
+  /// beside: "Data"
+  button "Words" => "Texter";
+  /// TranslationsDesk · a button's label · at most ~23 characters
+  /// shown through Tab.label
+  button "Written by staff" => "Skrivet av personalen";
+  /// TranslationsDesk · a hint under a field
+  /// placeholders: {t.MaxLength} = t.MaxLength (int) — {t.MaxLength} is a count: give one text per plural form
+  /// shown through Field.hint
+  /// beside: "Save"
+  hint "At most about {t.MaxLength} characters." => "Högst ungefär {t.MaxLength} tecken.";
+  /// TranslationsDesk · a hint under a field
+  /// placeholders: {t.Holes} = t.Holes (string)
+  /// shown through Field.hint
+  /// beside: "Save"
+  hint "Keep {t.Holes} — the page fills them in." => "Behåll {t.Holes}, sidan fyller i dem.";
+  /// TranslationsDesk · a label (a field, a list item, a menu entry) · at most ~59 characters
+  /// shown through Switch.label
+  label "Show everything, not only what needs doing" => "Visa allt, inte bara det som behöver göras";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Back to the words in the app's locale file." => "Tillbaka till texten i appens språkfil.";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Cleared." => "Rensat.";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Saved — readers see it now." => "Sparat. Läsarna ser det nu.";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Saved." => "Sparat.";
+  /// TranslationsDesk · text on the page
+  text "(a count — translated in the locale file)" => "(ett antal, översätts i språkfilen)";
+  /// TranslationsDesk · text on the page
+  /// shown through EmptyState.body
+  text "Add a locale file (osy translate --to sv) to give it another." => "Lägg till en språkfil (osy translate --to sv) för att ge den ett till.";
+  /// TranslationsDesk · text on the page
+  text "All the data is translated." => "All data är översatt.";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {t.Neighbours} = t.Neighbours (string)
+  text "Beside: {t.Neighbours}" => "Bredvid: {t.Neighbours}";
+  /// TranslationsDesk · text on the page
+  text "Every word is translated." => "Alla texter är översatta.";
+  /// TranslationsDesk · text on the page
+  text "Everything on this page is translated." => "Allt på den här sidan är översatt.";
+  /// TranslationsDesk · text on the page
+  text "Everything staff wrote is written in every language." => "Allt personalen har skrivit finns på alla språk.";
+  /// TranslationsDesk · text on the page
+  text "Language" => "Språk";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {value} = … (int), {pages} = pages (int) — {value} is a count: give one text per plural form
+  /// beside: "Previous", "Next"
+  text "Page {value} of {pages}" => { one: "Sida {value} av {pages}", other: "Sida {value} av {pages}" };
+  /// TranslationsDesk · text on the page
+  /// beside: "Written by staff"
+  text "Words staff write once per language — a reader in a language they are missing from gets the template's own words." => "Text som personalen skriver en gång per språk. En läsare på ett språk där den saknas får mallens egen text.";
+  /// TranslationsDesk · text on the page
+  text "Write it" => "Skriv den";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {w.WrittenIn} = w.WrittenIn (string)
+  text "Written in {w.WrittenIn}" => "Skrivet på {w.WrittenIn}";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {w.WrittenIn} = w.WrittenIn (string), {w.MissingIn} = w.MissingIn (string)
+  text "Written in {w.WrittenIn} — not in {w.MissingIn}" => "Skrivet på {w.WrittenIn}, inte på {w.MissingIn}";
+  /// TranslationsDesk · a title
+  /// shown through EmptyState.title
+  title "This app speaks one language" => "Appen har bara ett språk";
+}

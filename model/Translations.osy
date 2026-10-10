@@ -1,0 +1,223 @@
+// A translator's desk. Two kinds of words, one desk:
+//
+//   ① THE APP'S OWN WORDS — every text the compiler found (a button, a heading, a mail's subject), each with where it
+//     is and what surrounds it. Their BASE is the checked-in `locales/<language>.osy`, which a compile loads; staff
+//     OVERRIDE one here, and an override is data, so a recompile never overwrites it. A recompile that changed a text's
+//     source leaves its override STALE: kept, shown beside the text that replaced it, and no longer served.
+//   ② THE APP'S DATA — every `[Translatable]` member of every row (a product's name, a shelf's blurb), with its
+//     translation in the language: missing, done, or STALE when the source text was edited after it was translated.
+//
+// ⚑ WHO MAY DO IT IS THE APP'S TO SAY — once, with `policy EditsTranslations => IsStaff;` (its own roles). Until it
+//   says, nobody overrides a text. `TextOverride` stays `[Authority(Extensible)]`, so an app may add grants of its own.
+//
+//   Listing the app's words asks the same question — only someone who may override one may list them (they include
+//   the words of signed-in pages and of mail) — and a data translation is written through the writer's own update
+//   rule for that row and member. Nothing here reaches a row its reader could not.
+
+namespace Osysharp.Localization;
+
+/// Who overrides the app's words and translates its data at the desk. The app answers it once with its own roles:
+/// `policy EditsTranslations => IsStaff;`. Unanswered, nobody does.
+virtual policy EditsTranslations => false;
+
+/// A text's words in one language, as staff overrode them after the compile — served instead of the checked-in
+/// translation. Keyed by the text's message id (its role and source words), so a text whose source changed has a NEW
+/// id, and its old override is stale rather than wrong.
+[Authority(Extensible)]
+[Unique(MessageId, Language)]
+public entity TextOverride {
+  [Required, MaxLength(16)] string MessageId;
+  [Required, MaxLength(35)] string Language;
+  [Required, MaxLength(4000)] string Text;
+  /// The source words it translates, when it was written — what the desk shows for a stale one.
+  [Required, MaxLength(4000)] string Source;
+  DateTime WrittenAt;
+  security { allow read, create, update, delete when EditsTranslations; }
+}
+
+/// Where a text or a value stands in one language.
+public enum TranslationState {
+  /// Nothing in this language yet — the reader sees the source words.
+  [Label("Not translated")] Missing,
+  /// Its source changed after it was translated.
+  [Label("Out of date")] Stale,
+  /// Translated (in the locale file, or in the data).
+  [Label("Translated")] Done,
+  /// Staff's words, in place of the locale file's.
+  [Label("Changed here")] Overridden,
+}
+
+/// One text of the app on the desk.
+public class TextRow {
+  public string Id = "";
+  public string Source = "";
+  /// What it is and where: "button · /checkout · ShopCheckout".
+  public string Where = "";
+  public string Neighbours = "";
+  public string Holes = "";
+  public int MaxLength = 0;
+  /// What a reader in the language sees now.
+  public string Current = "";
+  /// The locale file's words, if any.
+  public string Base = "";
+  public TranslationState State = TranslationState.Missing;
+  /// A text with a count has one form per plural category: translated in the locale file, not here.
+  public bool Plural = false;
+  /// An override of a text that is no longer in the app (its source changed) — kept until it is cleared.
+  public bool Orphan = false;
+}
+
+/// One translatable value of one row on the desk.
+public class DataRow {
+  public string Entity = "";
+  public Guid Row;
+  public string Field = "";
+  /// "Product · Kiambu AA · Summary".
+  public string Where = "";
+  public string Source = "";
+  public string Text = "";
+  public TranslationState State = TranslationState.Missing;
+}
+
+/// Every text of the app in `language`, with its context and what a reader there sees now — only what needs doing
+/// (not translated, or out of date) unless `everything`.
+public List<TextRow> TranslationTexts(string language, bool everything) {
+  var overrides = TextOverride.Where(o => o.Language == language).ToList();
+  var rows = new List<TextRow>();
+  var known = new List<string>();
+  foreach (var t in Translation.Texts(language)) {
+    known.Add(t.Id);
+    var o = overrides.FirstOrDefault(x => x.MessageId == t.Id);
+    var state = o != null ? TranslationState.Overridden
+      : t.Base == "" ? TranslationState.Missing
+      : t.BaseStale ? TranslationState.Stale
+      : TranslationState.Done;
+    if (!everything && state != TranslationState.Missing && state != TranslationState.Stale) { continue; }
+    var where = t.Role + (t.Where == "" ? "" : " · " + t.Where) + (t.Owner == "" ? "" : " · " + t.Owner);
+    rows.Add(new TextRow { Id = t.Id, Source = t.Source, Where = where, Neighbours = t.Neighbours, Holes = t.Holes,
+                           MaxLength = t.MaxLength, Base = t.Base, State = state, Plural = t.Plural,
+                           Current = o != null ? o.Text : t.Base != "" ? t.Base : t.Source });
+  }
+  // An override whose text is gone: its source changed (so did its id). Kept, and shown, until someone clears it.
+  foreach (var o in overrides.Where(x => !known.Contains(x.MessageId))) {
+    rows.Add(new TextRow { Id = o.MessageId, Source = o.Source, Where = "no longer in the app — its words changed",
+                           Current = o.Text, State = TranslationState.Stale, Orphan = true });
+  }
+  return rows;
+}
+
+/// Staff's own words for a text in `language`, in place of the locale file's — refused when they would not work
+/// (a placeholder dropped or invented, markup, nothing at all).
+public void OverrideText(string id, string language, string text) {
+  var problem = Translation.Problems(id, text);
+  if (problem != "") { throw new ValidationException(problem); }
+  var source = Translation.Texts(language).Where(t => t.Id == id).Select(t => t.Source).FirstOrDefault() ?? "";
+  var existing = TextOverride.Where(o => o.MessageId == id && o.Language == language).FirstOrDefault();
+  if (existing == null) {
+    new TextOverride { MessageId = id, Language = language, Text = text.Trim(), Source = source, WrittenAt = DateTime.UtcNow };
+  } else {
+    existing.Text = text.Trim();
+    existing.Source = source;
+    existing.WrittenAt = DateTime.UtcNow;
+  }
+}
+
+/// Back to the locale file's words (or, for a stale override, gone).
+public void ClearOverride(string id, string language) {
+  foreach (var o in TextOverride.Where(x => x.MessageId == id && x.Language == language).ToList()) { o.Delete(); }
+}
+
+/// One page (from 0) of the translatable values of the app's data in `language` that the reader may read — only what
+/// needs doing unless `everything`. A page is up to `DataPageSize` rows of one entity (only rows with something to do,
+/// unless `everything`), so a catalogue of any size is read a page at a time, in the one language being worked on.
+public List<DataRow> TranslationData(string language, bool everything, int page) {
+  var rows = new List<DataRow>();
+  foreach (var d in Translation.Data(language, everything, page, DataPageSize)) {
+    var state = d.Text == "" ? TranslationState.Missing : d.Stale ? TranslationState.Stale : TranslationState.Done;
+    if (!everything && state == TranslationState.Done) { continue; }
+    var entity = d.Entity.Contains(".") ? d.Entity.Substring(d.Entity.LastIndexOf(".") + 1) : d.Entity;
+    rows.Add(new DataRow { Entity = d.Entity, Row = d.Row, Field = d.Field, Where = d.Label == d.Source && d.Field != "Name" && d.Field != "Title" ? $"{entity} · {d.Field}" : $"{entity} · {d.Label} · {d.Field}",
+                           Source = d.Source, Text = d.Text, State = state });
+  }
+  return rows;
+}
+
+/// How many rows of data a page of the desk holds.
+const int DataPageSize = 50;
+
+/// How many pages of data there are for the reader in `language` — of what needs doing, unless `everything`.
+public int TranslationDataPages(string language, bool everything) {
+  return Translation.DataPages(language, everything, DataPageSize);
+}
+
+/// A value's words in `language` — "" takes the translation away, and the reader sees the source again.
+public void TranslateData(string entity, Guid row, string field, string language, string text) {
+  Translation.SetData(entity, row, field, language, text.Trim());
+}
+
+// ── words staff WRITE in each language ────────────────────────────────────────────────────────────────────────────
+//
+// ③ Some words are neither the app's text nor a row's `[Translatable]` value: staff write them afresh in each
+//   language, somewhere else in the app — a mail's paragraph changed at a shop's desk (kept per language, because a
+//   Swedish customer is mailed the Swedish words). The desk cannot know where an app keeps those, so the app says:
+//
+//     app.Translations = new TranslationsSetup { Written = [ new MyMailWords() ] };
+//
+//   and the desk lists every one that is written in some of the app's languages and not in the others — a reader in
+//   a missing language gets the template's own words, which is not what staff chose for everyone else.
+
+/// Words staff wrote in the app, in each language they wrote them in — one mail paragraph, say.
+public class WrittenWords {
+  /// What they are and where: "Mail · Order confirmation · Intro".
+  public string Where = "";
+  /// The languages they are written in (`en`, `sv`).
+  public List<string> Languages = [];
+  /// Where staff write them, when the app has a page for it ("/staff/desk") — the desk links there.
+  public string? WriteAt;
+}
+
+/// A place in the app where staff write words once per language. List it in `app.Translations`.
+public interface IWrittenWords {
+  /// Everything written there, each with the languages it is written in.
+  List<WrittenWords> Written();
+}
+
+/// What the desk looks after beyond the app's text and its `[Translatable]` data.
+[AppSetting("Translations")]
+public class TranslationsSetup {
+  /// The places staff write words per language — each lists what it holds.
+  public List<IWrittenWords> Written = [];
+}
+
+/// One piece of staff-written words on the desk: the languages it is written in and the ones it is not.
+public class WrittenRow {
+  public string Where = "";
+  /// The languages it IS written in: "EN".
+  public string WrittenIn = "";
+  /// The app's languages it is NOT written in: "SV" — a reader there gets the template's own words.
+  public string MissingIn = "";
+  public string? WriteAt;
+  /// Missing in some language, or written in every one.
+  public TranslationState State = TranslationState.Missing;
+}
+
+/// Whether the app lists any place staff write words per language (`app.Translations`).
+public bool TranslationsWrittenAnywhere() {
+  return App.Setting<TranslationsSetup>().Written.Count > 0;
+}
+
+/// The staff-written words of the app — only those written in some of its languages and not in all, unless
+/// `everything`. In EVERY direction: words written only in Swedish are missing in the source language too.
+public List<WrittenRow> TranslationWritten(bool everything) {
+  var rows = new List<WrittenRow>();
+  foreach (var place in App.Setting<TranslationsSetup>().Written) {
+    foreach (var w in place.Written()) {
+      var missing = App.Languages.Where(l => !w.Languages.Contains(l)).ToList();
+      if (!everything && (missing.Count == 0 || w.Languages.Count == 0)) { continue; }
+      rows.Add(new WrittenRow { Where = w.Where, WrittenIn = string.Join(", ", w.Languages.Select(l => l.ToUpper())),
+                                MissingIn = string.Join(", ", missing.Select(l => l.ToUpper())), WriteAt = w.WriteAt,
+                                State = missing.Count == 0 ? TranslationState.Done : TranslationState.Missing });
+    }
+  }
+  return rows;
+}

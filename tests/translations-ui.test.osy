@@ -1,0 +1,44 @@
+// The desk on screen: staff translate a word the locale file left out, and a dish on the menu, and a reader in Swedish
+// sees both at once — no recompile, no deploy.
+
+using Osysharp.Localization;
+
+[Test(Cafe)]
+void staff_translate_a_word_and_a_dish_and_a_swedish_reader_sees_them() {
+  Ui.SignInAs(Anna);
+  Ui.Visit("/desk");
+  Assert.Visible("Order at the counter");
+  Assert.Visible("Not translated", within: "Order at the counter");
+  Ui.Shot("the desk: what needs translating");
+  Ui.Click("Change", within: "Order at the counter");
+  Ui.Fill("SV", "Beställ i kassan");
+  Ui.Click("Save");
+  Assert.Visible("Saved — readers see it now.");
+
+  Ui.Click("Data");
+  Assert.Visible("Cinnamon bun");
+  Ui.Click("Translate", within: "Dish · Cinnamon bun · Name");
+  Ui.Fill("SV", "Kanelbulle");
+  Ui.Click("Save");
+  Assert.Visible("Saved.");
+  Ui.Shot("the desk: the menu's data");
+
+  // What staff wrote elsewhere in one language only — the receipt's paragraph, in English and not in Swedish.
+  runas (Anna) {
+    new ReceiptWords { Part = "Intro", Language = "en", Words = "Thanks for coming by." };
+    UnitOfWork.Commit();
+  }
+  Ui.Click("Written by staff");
+  Assert.Hidden("Saved.");                                    // the Data tab's save is not news on this one
+  Assert.Visible("Written in EN — not in SV", within: "Mail · Receipt · Intro");
+  Assert.Visible("Not translated", within: "Mail · Receipt · Intro");
+  Ui.Shot("the desk: words staff wrote in one language");
+
+  Ui.SignOut();
+  Ui.Visit("/sv/");
+  Assert.Visible("Dagens meny");                              // the locale file's word
+  Assert.Visible("Beställ i kassan");                         // staff's word, from the desk
+  Assert.Visible("Kanelbulle");                               // the dish, in Swedish
+  Assert.Visible("Pea soup");                                 // not translated yet: its own words
+  Ui.Shot("the menu in Swedish");
+}

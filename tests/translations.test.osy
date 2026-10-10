@@ -1,0 +1,145 @@
+// The desk through its functions: what needs translating, an override that wins over the locale file and can be
+// taken back, a bad one refused, and the menu's data translated — as staff, and refused to anyone else.
+
+using Osysharp.Localization;
+
+[TestFixture]
+void Cafe() {
+  var anna = new Member { Email = "anna@cafe.test", PasswordHash = Security.HashPassword("anna-pass-1") };
+  new RoleGrant { Member = anna, Role = AppRole.Staff };
+  var olle = new Member { Email = "olle@cafe.test", PasswordHash = Security.HashPassword("olle-pass-1") };
+  new RoleGrant { Member = olle, Role = AppRole.Member };
+  new Dish { Code = "bun", Name = "Cinnamon bun", Description = "Baked this morning.", Price = 35m };
+  new Dish { Code = "soup", Name = "Pea soup", Description = "With mustard, on Thursdays.", Price = 95m };
+}
+
+principal Anna => Member.Single(m => m.Email == "anna@cafe.test");
+principal Olle => Member.Single(m => m.Email == "olle@cafe.test");
+
+TextRow Row(List<TextRow> rows, string source) { return rows.Single(r => r.Source == source); }
+
+[Test(Cafe)]
+void the_desk_lists_what_is_not_translated_with_where_it_is() {
+  runas (Anna) {
+    var missing = TranslationTexts("sv", false);
+    var order = Row(missing, "Order at the counter");
+    Assert.Equal(TranslationState.Missing, order.State);
+    Assert.Contains("/", order.Where);                          // a route: where it is
+    Assert.False(missing.Any(r => r.Source == "Today's menu"));   // the locale file translates it
+
+    var all = TranslationTexts("sv", true);
+    Assert.Equal("Dagens meny", Row(all, "Today's menu").Current);
+    Assert.Equal(TranslationState.Done, Row(all, "Today's menu").State);
+  }
+}
+
+[Test(Cafe)]
+void an_override_wins_over_the_locale_file_and_can_be_taken_back() {
+  runas (Anna) {
+    var menu = Row(TranslationTexts("sv", true), "Today's menu");
+    OverrideText(menu.Id, "sv", "Meny i dag");
+    var after = Row(TranslationTexts("sv", true), "Today's menu");
+    Assert.Equal(TranslationState.Overridden, after.State);
+    Assert.Equal("Meny i dag", after.Current);
+    Assert.Equal("Dagens meny", after.Base);                    // the locale file's words are still the base
+
+    ClearOverride(menu.Id, "sv");
+    Assert.Equal("Dagens meny", Row(TranslationTexts("sv", true), "Today's menu").Current);
+  }
+}
+
+[Test(Cafe)]
+void an_override_that_would_not_work_is_refused() {
+  runas (Anna) {
+    var order = Row(TranslationTexts("sv", true), "Order at the counter");
+    Assert.Throws<ValidationException>(() => OverrideText(order.Id, "sv", "<b>Beställ</b> i kassan"));
+    Assert.Throws<ValidationException>(() => OverrideText(order.Id, "sv", "   "));
+  }
+}
+
+[Test(Cafe)]
+void a_member_may_not_list_or_change_the_words() {
+  runas (Olle) {
+    Assert.Throws<NotAuthorized>(() => TranslationTexts("sv", true));
+  }
+}
+
+[Test(Cafe)]
+void the_menu_is_translated_at_the_desk_and_its_readers_see_it() {
+  runas (Anna) {
+    var bun = TranslationData("sv", false, 0).Single(d => d.Source == "Cinnamon bun");
+    Assert.Equal(TranslationState.Missing, bun.State);
+    TranslateData(bun.Entity, bun.Row, bun.Field, "sv", "Kanelbulle");
+    Assert.False(TranslationData("sv", false, 0).Any(d => d.Source == "Cinnamon bun"));
+    Assert.Equal("Kanelbulle", TranslationData("sv", true, 0).Single(d => d.Source == "Cinnamon bun").Text);
+  }
+  Session.SetLanguage("sv");
+  Assert.Equal("Kanelbulle", Dish.Single(d => d.Code == "bun").Name);
+  Session.SetLanguage("en");
+  Assert.Equal("Cinnamon bun", Dish.Single(d => d.Code == "bun").Name);
+}
+
+/// A whole catalogue is read a page at a time: the desk asks for one page of rows in the language being worked on, and
+/// says how many pages there are — every dish is on exactly one of them.
+[Test(Cafe)]
+void the_data_is_read_a_page_at_a_time() {
+  runas (Anna) {
+    for (var i = 0; i < 60; i++) { new Dish { Code = $"d{i:D2}", Name = $"Dish {i:D2}", Price = 10m }; }
+    UnitOfWork.Commit();
+    Assert.Equal(2, TranslationDataPages("sv", true));          // 62 dishes, 50 to a page
+    Assert.Equal(2, TranslationDataPages("sv", false));         // …and none of them is translated yet
+    var first = TranslationData("sv", true, 0).Where(d => d.Field == "Name").Select(d => d.Source).ToList();
+    var second = TranslationData("sv", true, 1).Where(d => d.Field == "Name").Select(d => d.Source).ToList();
+    Assert.Equal(50, first.Count);
+    Assert.Equal(12, second.Count);
+    Assert.False(first.Any(s => second.Contains(s)));
+    Assert.Equal(0, TranslationData("sv", true, 2).Count);      // past the last page: nothing
+
+    // What needs doing is decided in the database: translate the first page's names and descriptions, and the rows
+    // left to do fit on one page — the work still owed, not the catalogue, is what is paged.
+    foreach (var d in TranslationData("sv", false, 0)) { TranslateData(d.Entity, d.Row, d.Field, "sv", $"sv {d.Source}"); }
+    Assert.Equal(1, TranslationDataPages("sv", false));
+    Assert.Equal(12, TranslationData("sv", false, 0).Count(d => d.Field == "Name"));
+    Assert.Equal(2, TranslationDataPages("sv", true));
+  }
+}
+
+[Test(Cafe)]
+void a_translation_goes_out_of_date_when_its_source_is_edited() {
+  runas (Anna) {
+    var soup = TranslationData("sv", true, 0).Single(d => d.Source == "With mustard, on Thursdays.");
+    TranslateData(soup.Entity, soup.Row, soup.Field, "sv", "Med senap, på torsdagar.");
+    Dish.Single(d => d.Code == "soup").Description = "With mustard and pancakes, on Thursdays.";
+    UnitOfWork.Commit();
+    var stale = TranslationData("sv", false, 0).Single(d => d.Source == "With mustard and pancakes, on Thursdays.");
+    Assert.Equal(TranslationState.Stale, stale.State);
+    Assert.Equal("Med senap, på torsdagar.", stale.Text);        // kept, for the translator to update
+  }
+}
+
+/// ③ WORDS STAFF WRITE PER LANGUAGE ELSEWHERE — the receipt's paragraphs: the desk lists each one written in some of the
+/// app's languages and not in all, in EVERY direction (Swedish only is missing its English as much as the reverse).
+[Test(Cafe)]
+void words_staff_wrote_in_one_language_and_not_another_are_listed() {
+  runas (Anna) {
+    new ReceiptWords { Part = "Intro", Language = "en", Words = "Thanks for coming by." };
+    new ReceiptWords { Part = "Outro", Language = "sv", Words = "Välkommen åter!" };
+    new ReceiptWords { Part = "Thanks", Language = "en", Words = "See you soon." };
+    new ReceiptWords { Part = "Thanks", Language = "sv", Words = "Vi ses snart." };
+    UnitOfWork.Commit();
+
+    var needed = TranslationWritten(false);
+    Assert.Equal(2, needed.Count);
+    var intro = needed.Single(r => r.Where == "Mail · Receipt · Intro");
+    Assert.Equal("EN", intro.WrittenIn);
+    Assert.Equal("SV", intro.MissingIn);
+    Assert.Equal(TranslationState.Missing, intro.State);
+    var outro = needed.Single(r => r.Where == "Mail · Receipt · Outro");
+    Assert.Equal("SV", outro.WrittenIn);
+    Assert.Equal("EN", outro.MissingIn);
+
+    var all = TranslationWritten(true);
+    Assert.Equal(3, all.Count);
+    Assert.Equal(TranslationState.Done, all.Single(r => r.Where == "Mail · Receipt · Thanks").State);
+  }
+}

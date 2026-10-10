@@ -1,0 +1,146 @@
+// ar (العربية): the words of Osysharp.Localization, translated.
+// Written and kept in step with the source by `osy translate`: a new text arrives as `=> null`, a text
+// whose source changed keeps its old translation in a `was` clause. The words are yours to edit.
+// Source language: en.
+
+translations ar {
+  // ── Osysharp.Localization.TranslationState ──
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~18 characters
+  /// shown through Osysharp.Localization.TranslationState.Overridden
+  /// beside: "Not translated", "Out of date", "Translated"
+  label "Changed here" => "عُدّل هنا";
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~20 characters
+  /// shown through Osysharp.Localization.TranslationState.Missing
+  /// beside: "Out of date", "Translated", "Changed here"
+  label "Not translated" => "غير مترجم";
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~17 characters
+  /// shown through Osysharp.Localization.TranslationState.Stale
+  /// beside: "Not translated", "Translated", "Changed here"
+  label "Out of date" => "قديم";
+  /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~16 characters
+  /// shown through Osysharp.Localization.TranslationState.Done
+  /// beside: "Not translated", "Out of date", "Changed here"
+  label "Translated" => "مترجم";
+
+  // ── SaveBar ──
+  /// SaveBar · a button's label · at most ~10 characters
+  /// shown through Button.label
+  /// beside: "Unsaved changes", "Discard"
+  /// also in TranslationsDesk
+  button "Save" => "حفظ";
+
+  // ── TranslationTexts ──
+  /// TranslationTexts · a control's name for screen readers
+  /// shown through TextRow.Where
+  accessibleName "no longer in the app — its words changed" => "لم يعد موجودًا في التطبيق، فقد تغيّرت كلماته";
+
+  // ── TranslationsDesk ──
+  /// TranslationsDesk · a control's name for screen readers
+  accessibleName "Data" => "البيانات";
+  /// TranslationsDesk · a control's name for screen readers
+  accessibleName "Pages" => "الصفحات";
+  /// TranslationsDesk · a control's name for screen readers
+  accessibleName "Words" => "النصوص";
+  /// TranslationsDesk · a control's name for screen readers
+  /// placeholders: {w.Where} = w.Where (string)
+  accessibleName "Write it: {w.Where}" => "اكتبه: {w.Where}";
+  /// TranslationsDesk · a control's name for screen readers
+  /// beside: "Words staff write once per language — a reader in a language they are missing from gets the template's own words."
+  accessibleName "Written by staff" => "نصوص من كتابة الفريق";
+  /// TranslationsDesk · a button's label · at most ~12 characters
+  /// shown through Button.label
+  /// beside: "Save"
+  button "Cancel" => "إلغاء";
+  /// TranslationsDesk · a button's label · at most ~12 characters
+  /// shown through Button.label
+  button "Change" => "تغيير";
+  /// TranslationsDesk · a button's label · at most ~11 characters
+  /// shown through Button.label
+  button "Clear" => "مسح";
+  /// TranslationsDesk · a button's label · at most ~10 characters
+  /// shown through Tab.label
+  /// beside: "Words"
+  button "Data" => "البيانات";
+  /// TranslationsDesk · a button's label · at most ~10 characters
+  /// shown through Button.label
+  /// beside: "Previous"
+  button "Next" => "التالي";
+  /// TranslationsDesk · a button's label · at most ~14 characters
+  /// shown through Button.label
+  /// beside: "Next"
+  button "Previous" => "السابق";
+  /// TranslationsDesk · a button's label · at most ~15 characters
+  /// shown through Button.label
+  button "Translate" => "ترجمة";
+  /// TranslationsDesk · a button's label · at most ~30 characters
+  /// shown through Button.label
+  button "Use the locale file's" => "استخدام نص ملف اللغة";
+  /// TranslationsDesk · a button's label · at most ~11 characters
+  /// shown through Tab.label
+  /// beside: "Data"
+  button "Words" => "النصوص";
+  /// TranslationsDesk · a button's label · at most ~23 characters
+  /// shown through Tab.label
+  button "Written by staff" => "من كتابة الفريق";
+  /// TranslationsDesk · a hint under a field
+  /// placeholders: {t.MaxLength} = t.MaxLength (int) — {t.MaxLength} is a count: give one text per plural form
+  /// shown through Field.hint
+  /// beside: "Save"
+  hint "At most about {t.MaxLength} characters." => { zero: "الحد الأقصى للأحرف: {t.MaxLength} تقريبًا.", one: "الحد الأقصى للأحرف: {t.MaxLength} تقريبًا.", two: "الحد الأقصى للأحرف: {t.MaxLength} تقريبًا.", few: "{t.MaxLength} أحرف تقريبًا كحد أقصى.", many: "{t.MaxLength} حرفًا تقريبًا كحد أقصى.", other: "{t.MaxLength} حرف تقريبًا كحد أقصى." };
+  /// TranslationsDesk · a hint under a field
+  /// placeholders: {t.Holes} = t.Holes (string)
+  /// shown through Field.hint
+  /// beside: "Save"
+  hint "Keep {t.Holes} — the page fills them in." => "احتفظ بـ {t.Holes} كما هي، فالصفحة تملؤها.";
+  /// TranslationsDesk · a label (a field, a list item, a menu entry) · at most ~59 characters
+  /// shown through Switch.label
+  label "Show everything, not only what needs doing" => "عرض كل شيء، وليس ما يحتاج إلى عمل فقط";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Back to the words in the app's locale file." => "عاد إلى النص الموجود في ملف لغة التطبيق.";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Cleared." => "تم المسح.";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Saved — readers see it now." => "تم الحفظ، والقراء يرونه الآن.";
+  /// TranslationsDesk · note
+  /// shown through note
+  note "Saved." => "تم الحفظ.";
+  /// TranslationsDesk · text on the page
+  text "(a count — translated in the locale file)" => "(عدد، يُترجم في ملف اللغة)";
+  /// TranslationsDesk · text on the page
+  /// shown through EmptyState.body
+  text "Add a locale file (osy translate --to sv) to give it another." => "أضف ملف لغة (osy translate --to sv) لتمنحه لغة أخرى.";
+  /// TranslationsDesk · text on the page
+  text "All the data is translated." => "كل البيانات مترجمة.";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {t.Neighbours} = t.Neighbours (string)
+  text "Beside: {t.Neighbours}" => "بجانب: {t.Neighbours}";
+  /// TranslationsDesk · text on the page
+  text "Every word is translated." => "كل النصوص مترجمة.";
+  /// TranslationsDesk · text on the page
+  text "Everything on this page is translated." => "كل ما في هذه الصفحة مترجم.";
+  /// TranslationsDesk · text on the page
+  text "Everything staff wrote is written in every language." => "كل ما كتبه الفريق مكتوب بجميع اللغات.";
+  /// TranslationsDesk · text on the page
+  text "Language" => "اللغة";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {value} = … (int), {pages} = pages (int) — {value} is a count: give one text per plural form
+  /// beside: "Previous", "Next"
+  text "Page {value} of {pages}" => { zero: "الصفحة {value} من {pages}", one: "الصفحة {value} من {pages}", two: "الصفحة {value} من {pages}", few: "الصفحة {value} من {pages}", many: "الصفحة {value} من {pages}", other: "الصفحة {value} من {pages}" };
+  /// TranslationsDesk · text on the page
+  /// beside: "Written by staff"
+  text "Words staff write once per language — a reader in a language they are missing from gets the template's own words." => "نصوص يكتبها الفريق مرة واحدة لكل لغة. القارئ بلغة تنقصها هذه النصوص يرى النص الأصلي للقالب.";
+  /// TranslationsDesk · text on the page
+  text "Write it" => "اكتبه";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {w.WrittenIn} = w.WrittenIn (string)
+  text "Written in {w.WrittenIn}" => "مكتوب بـ {w.WrittenIn}";
+  /// TranslationsDesk · text on the page
+  /// placeholders: {w.WrittenIn} = w.WrittenIn (string), {w.MissingIn} = w.MissingIn (string)
+  text "Written in {w.WrittenIn} — not in {w.MissingIn}" => "مكتوب بـ {w.WrittenIn}، وليس بـ {w.MissingIn}";
+  /// TranslationsDesk · a title
+  /// shown through EmptyState.title
+  title "This app speaks one language" => "هذا التطبيق بلغة واحدة";
+}
