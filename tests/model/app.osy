@@ -81,7 +81,7 @@ app.Translations = new TranslationsSetup { Written = [ new ReceiptWordsOnTheDesk
 [Route("/")]
 [AllowAnonymous]
 component Menu() {
-  live var dishes = Dish.OrderBy(d => d.Name).ToList();
+  live var dishes = Dish.OrderBy(d => d.Name).Take(200).ToList();
   render {
     Stack(gap: 3, p: 6) {
       Text("Today's menu", fontSize: FontSize.Title, fontWeight: FontWeight.Bold);

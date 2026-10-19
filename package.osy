@@ -2,8 +2,8 @@
 // not translated yet, what went stale when its source changed, and a staff override of any word that survives every
 // recompile. The checked-in `locales/<language>.osy` files stay the base; this is where people change them after.
 package Osysharp.Localization {
-  version "0.2.3";
-  minPlatform "0.9.0";
+  version "0.3.0";
+  minPlatform "0.14.0";
   summary     "a translator's desk: untranslated and stale words and data in every language, and overrides that survive a recompile.";
   model "model/**/*.osy";
   use Osysharp.Ui;
