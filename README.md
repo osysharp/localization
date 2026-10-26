@@ -62,3 +62,75 @@ app.Translations = new TranslationsSetup { Written = [ new MyMailWords() ] };   
 
 Fork it to build your own desk: copy the folder into your app's `kits/`, keep the package name or change it, and your
 app resolves it from there.
+
+## Examples
+
+Taken from this package's own tests, which compile and run on every release.
+
+```osy
+using Osysharp.Localization;
+
+[Test(Cafe)]
+void the_desk_lists_what_is_not_translated_with_where_it_is() {
+  runas (Anna) {
+    var missing = TranslationTexts("sv", false);
+    var order = Row(missing, "Order at the counter");
+    Assert.Equal(TranslationState.Missing, order.State);
+    Assert.Contains("/", order.Where);                          // a route: where it is
+    Assert.False(missing.Any(r => r.Source == "Today's menu"));   // the locale file translates it
+
+    var all = TranslationTexts("sv", true);
+    Assert.Equal("Dagens meny", Row(all, "Today's menu").Current);
+    Assert.Equal(TranslationState.Done, Row(all, "Today's menu").State);
+  }
+}
+```
+
+From [`tests/translations.test.osy`](tests/translations.test.osy).
+
+```osy
+using Osysharp.Localization;
+
+[Test(Cafe)]
+void an_override_wins_over_the_locale_file_and_can_be_taken_back() {
+  runas (Anna) {
+    var menu = Row(TranslationTexts("sv", true), "Today's menu");
+    OverrideText(menu.Id, "sv", "Meny i dag");
+    var after = Row(TranslationTexts("sv", true), "Today's menu");
+    Assert.Equal(TranslationState.Overridden, after.State);
+    Assert.Equal("Meny i dag", after.Current);
+    Assert.Equal("Dagens meny", after.Base);                    // the locale file's words are still the base
+
+    ClearOverride(menu.Id, "sv");
+    Assert.Equal("Dagens meny", Row(TranslationTexts("sv", true), "Today's menu").Current);
+  }
+}
+```
+
+From [`tests/translations.test.osy`](tests/translations.test.osy).
+
+```osy
+using Osysharp.Localization;
+
+[Test(Cafe)]
+void an_override_that_would_not_work_is_refused() {
+  runas (Anna) {
+    var order = Row(TranslationTexts("sv", true), "Order at the counter");
+    Assert.Throws<ValidationException>(() => OverrideText(order.Id, "sv", "<b>Beställ</b> i kassan"));
+    Assert.Throws<ValidationException>(() => OverrideText(order.Id, "sv", "   "));
+  }
+}
+```
+
+From [`tests/translations.test.osy`](tests/translations.test.osy).
+
+## Learn more
+
+- [The Osysharp.Localization reference](https://osysharp.com/reference/i18n/desk/)
+- [Osysharp.Localization in the package catalogue](https://osysharp.com/packages/#osysharp-localization)
+- [The Osy# reference](https://osysharp.com/reference/) — the language, the runtime and every kit
+- [`llms-full.txt`](https://osysharp.com/llms-full.txt) — the whole reference and specification as one Markdown file, for a coding agent
+
+## Licence
+
+MIT — see [`LICENSE`](LICENSE).
