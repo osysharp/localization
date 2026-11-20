@@ -4,6 +4,23 @@
 // Source language: en.
 
 translations sv {
+  // ── ConfirmStep ──
+  /// ConfirmStep · a button's label · at most ~12 characters
+  /// shown through Button.label
+  /// also in SettingNumber
+  /// also in TranslationsDesk
+  button "Cancel" => "Avbryt";
+
+  // ── Drawer ──
+  /// Drawer · a button's label · at most ~10 characters
+  /// shown through Drawer.nextLabel
+  /// also in TranslationsDesk
+  button "Next" => "Nästa";
+  /// Drawer · a button's label · at most ~14 characters
+  /// shown through Drawer.previousLabel
+  /// also in TranslationsDesk
+  button "Previous" => "Föregående";
+
   // ── Osysharp.Localization.TranslationState ──
   /// Osysharp.Localization.TranslationState · a label (a field, a list item, a menu entry) · at most ~18 characters
   /// shown through Osysharp.Localization.TranslationState.Overridden
@@ -22,10 +39,12 @@ translations sv {
   /// beside: "Not translated", "Out of date", "Changed here"
   label "Translated" => "Översatt";
 
-  // ── SaveBar ──
-  /// SaveBar · a button's label · at most ~10 characters
+  // ── SaveActions ──
+  /// SaveActions · a button's label · at most ~10 characters
   /// shown through Button.label
-  /// beside: "Unsaved changes", "Discard"
+  /// beside: "Edited", "Discard"
+  /// also in SettingNumber
+  /// also in SaveBar
   /// also in TranslationsDesk
   button "Save" => "Spara";
 
@@ -49,39 +68,16 @@ translations sv {
   accessibleName "Written by staff" => "Skrivet av personalen";
   /// TranslationsDesk · a button's label · at most ~12 characters
   /// shown through Button.label
-  /// beside: "Save"
-  button "Cancel" => "Avbryt";
-  /// TranslationsDesk · a button's label · at most ~12 characters
-  /// shown through Button.label
   button "Change" => "Ändra";
   /// TranslationsDesk · a button's label · at most ~11 characters
   /// shown through Button.label
   button "Clear" => "Rensa";
-  /// TranslationsDesk · a button's label · at most ~10 characters
-  /// shown through Tab.label
-  /// beside: "Words"
-  button "Data" => "Data";
-  /// TranslationsDesk · a button's label · at most ~10 characters
-  /// shown through Button.label
-  /// beside: "Previous"
-  button "Next" => "Nästa";
-  /// TranslationsDesk · a button's label · at most ~14 characters
-  /// shown through Button.label
-  /// beside: "Next"
-  button "Previous" => "Föregående";
   /// TranslationsDesk · a button's label · at most ~15 characters
   /// shown through Button.label
   button "Translate" => "Översätt";
   /// TranslationsDesk · a button's label · at most ~30 characters
   /// shown through Button.label
   button "Use the locale file's" => "Använd språkfilens";
-  /// TranslationsDesk · a button's label · at most ~11 characters
-  /// shown through Tab.label
-  /// beside: "Data"
-  button "Words" => "Texter";
-  /// TranslationsDesk · a button's label · at most ~23 characters
-  /// shown through Tab.label
-  button "Written by staff" => "Skrivet av personalen";
   /// TranslationsDesk · a hint under a field
   /// placeholders: {t.MaxLength} = t.MaxLength (int) — {t.MaxLength} is a count: give one text per plural form
   /// shown through Field.hint
@@ -107,6 +103,17 @@ translations sv {
   /// TranslationsDesk · note
   /// shown through note
   note "Saved." => "Sparat.";
+  /// TranslationsDesk · a tab's label · at most ~10 characters
+  /// shown through Tab.label
+  /// beside: "Words"
+  tab "Data" => "Data";
+  /// TranslationsDesk · a tab's label · at most ~11 characters
+  /// shown through Tab.label
+  /// beside: "Data"
+  tab "Words" => "Texter";
+  /// TranslationsDesk · a tab's label · at most ~23 characters
+  /// shown through Tab.label
+  tab "Written by staff" => "Skrivet av personalen";
   /// TranslationsDesk · text on the page
   text "(a count — translated in the locale file)" => "(ett antal, översätts i språkfilen)";
   /// TranslationsDesk · text on the page
